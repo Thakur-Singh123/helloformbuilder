@@ -28,7 +28,6 @@ use App\Http\Controllers\User\TempFormsController;
 use App\Http\Controllers\Admin\TemplateFormsController;
 use App\Http\Controllers\Admin\TemplatesController;
 
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -39,7 +38,6 @@ use App\Http\Controllers\Admin\TemplatesController;
 | contains the "web" middleware group. Now create something great!
 |
 */
-
     /* Cache Clear Start*/
 		Route::get('/cache', function(){
 			Artisan::call('cache:clear');
@@ -85,23 +83,23 @@ use App\Http\Controllers\Admin\TemplatesController;
 	Route::get('/start',  [UserLoginController::class, 'gate'])->name('template.gate');
     Route::post('/start', [UserLoginController::class, 'gateCheck'])->name('template.gate.check');
 
-	// Template gallery
+	//Template gallery
 	Route::get('/templates', [TemplateController::class, 'index'])->name('templates.index');
 	Route::get('/templates/{template}', [TemplateController::class, 'show'])->name('templates.show');
 	Route::match(['get', 'post'], '/templates/{template}/use', [TemplateController::class, 'use'])->middleware('auth')->name('templates.use');
 
-	// Form editor
+	//Form editor
 	Route::middleware('auth')->group(function () {
 		Route::get('/forms/{form}/edit', [FormController::class, 'edit'])->name('forms.edit');
 		Route::put('/forms/{form}', [FormController::class, 'update'])->name('forms.update');
 		Route::post('/forms/{form}/publish', [FormController::class, 'publish'])->name('forms.publish');
 	});
 
-	// Public form
+	//Public form
 	Route::get('/f/{slug}', [FormController::class, 'showPublic'])->name('forms.public');
 	Route::post('/f/{slug}', [FormController::class, 'submit'])->name('forms.submit');
 	
-	// API routes for embedding
+	//API routes for embedding
 	Route::get('/api/shortcode/{code}/data', [\App\Http\Controllers\Api\ShortcodeApiController::class, 'getFormData'])->name('api.shortcode.data');
 	Route::get('/api/shortcode/{code}/html', [\App\Http\Controllers\Api\ShortcodeApiController::class, 'getFormHtml'])->name('api.shortcode.html');
 
