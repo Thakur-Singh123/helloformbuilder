@@ -27,7 +27,7 @@ use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\User\TempFormsController;
 use App\Http\Controllers\Admin\TemplateFormsController;
 use App\Http\Controllers\Admin\TemplatesController;
-
+use App\Http\Controllers\PlanController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -86,13 +86,19 @@ use App\Http\Controllers\Admin\TemplatesController;
 	//Template gallery
 	Route::get('/templates', [TemplateController::class, 'index'])->name('templates.index');
 	Route::get('/templates/{template}', [TemplateController::class, 'show'])->name('templates.show');
-	Route::match(['get', 'post'], '/templates/{template}/use', [TemplateController::class, 'use'])->middleware('auth')->name('templates.use');
+	// Route::match(['get', 'post'], '/templates/{template}/use', [TemplateController::class, 'use'])->middleware('auth')->name('templates.use');
+	Route::match(['get', 'post'], '/templates/{template}/use', [TemplateController::class, 'use'])->middleware(['auth', 'template.limit'])->name('templates.use');
 
 	//Form editor
 	Route::middleware('auth')->group(function () {
 		Route::get('/forms/{form}/edit', [FormController::class, 'edit'])->name('forms.edit');
 		Route::put('/forms/{form}', [FormController::class, 'update'])->name('forms.update');
 		Route::post('/forms/{form}/publish', [FormController::class, 'publish'])->name('forms.publish');
+		//Plan
+		Route::get('/plans/upgrade', [PlanController::class, 'upgrade'])->name('plans.upgrade');
+		Route::post('/plans/checkout', [PlanController::class, 'checkout'])->name('plans.checkout');
+		Route::get('/plans/checkout', [PlanController::class, 'checkoutPage'])->name('plans.checkout.page');
+		Route::get('/plans/success', [PlanController::class, 'success'])->name('plans.success');
 	});
 
 	//Public form

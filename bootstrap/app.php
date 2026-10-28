@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'user' => \App\Http\Middleware\EnsureUserOrClient::class,
             'admin' => \App\Http\Middleware\EnsureAdminOrSuperAdmin::class,
             'employee' => \App\Http\Middleware\EnsureEmployee::class,
+            'template.limit' => \App\Http\Middleware\CheckTemplateLimit::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

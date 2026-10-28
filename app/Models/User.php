@@ -6,6 +6,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Carbon\Carbon;
+use Stripe\StripeClient;
 
 class User extends Authenticatable
 {
@@ -27,6 +29,10 @@ class User extends Authenticatable
         'profile',
         'admin_id',    // For multi-tenant: Users belong to an Admin
         'is_active',
+        'plan',
+        'stripe_customer_id',
+        'stripe_subscription_id',
+        'plan_ends_at',
         'email_verified_at',
         'email_verification_token',
     ];
@@ -50,6 +56,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'plan_ends_at' => 'datetime',  
             'password' => 'hashed',
             'is_active' => 'boolean',
         ];
@@ -188,5 +195,59 @@ class User extends Authenticatable
             return $this->id;
         }
         return $this->admin_id; // Client or regular user
+    }
+
+    //Function for plans
+    public function isPro(): bool
+    {
+        return $this->plan === 'pro'
+            && $this->plan_ends_at
+            && $this->plan_ends_at->isFuture();
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->plan === 'expired';
+    }
+
+    public function syncPlan(): void
+    {
+        if ($this->plan !== 'pro' || ($this->plan_ends_at && $this->plan_ends_at->isFuture())) {
+            return;
+        }
+
+        $end = null;
+
+        if ($this->stripe_subscription_id) {
+            try {
+                $stripe = new StripeClient(config('services.stripe.secret'));
+                $sub    = $stripe->subscriptions->retrieve($this->stripe_subscription_id);
+
+                if (in_array($sub->status, ['active', 'trialing'])) {
+                    $ts  = $sub->items->data[0]->current_period_end ?? $sub->current_period_end ?? null;
+                    $end = $ts ? Carbon::createFromTimestamp($ts) : null;
+                }
+            } catch (\Exception $e) {
+                return; 
+            }
+        }
+
+        if ($end) {
+            $this->update(['plan_ends_at' => $end]); 
+        } else {
+            $this->update(['plan' => 'expired']);
+        }
+    }
+
+    public function templatesUsedCount(): int
+    {
+        return \App\Models\Form::where('user_id', $this->id)
+            ->whereNotNull('form_template_id')
+            ->count();
+    }
+
+    public function canUseTemplate(): bool
+    {
+        return $this->isPro() || $this->templatesUsedCount() < 1;
     }
 }
