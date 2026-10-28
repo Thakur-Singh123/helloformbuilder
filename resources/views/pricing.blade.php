@@ -88,6 +88,11 @@
 .pricing-page .benefit-icon{ font-size:25px; }
 .pricing-page .benefit h3{ margin:12px 0 6px; font-size:18px; }
 .pricing-page .benefit p{ color:var(--muted); font-size:14px; margin:0; }
+.pricing-page .badge-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.pricing-page .badge-row .popular{ margin-bottom:0; }
+.pricing-page .status-badge{ display:inline-block; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800; }
+.pricing-page .status-badge.is-active{ background:#dcfce7; color:#15803d; }
+.pricing-page .status-badge.is-expired{ background:#fee2e2; color:#b91c1c; }
 
 .pricing-page .faq{ max-width:760px; margin:0 auto; padding:65px 0; }
 .pricing-page .faq h2{ text-align:center; font-size:30px; margin:0 0 28px; }
@@ -108,7 +113,13 @@
 
 @section('content')
 <div class="pricing-page">
-
+  @if(session('error'))
+    <div class="pr-container" style="padding-top:24px">
+      <div style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:14px 18px;border-radius:12px;font-size:14px;text-align:center">
+        {{ session('error') }}
+      </div>
+    </div>
+  @endif
   <section class="site-hero">
     <div class="pr-container pr-hero">
       <span class="eyebrow">Simple, transparent pricing</span>
@@ -154,14 +165,38 @@
 
       <!-- PRO PLAN -->
       <article class="plan pro">
-        <span class="popular">ALL FEATURES INCLUDED</span>
+      <div class="badge-row">
+          <span class="popular">ALL FEATURES INCLUDED</span>
+          @auth
+            @if(auth()->user()->isPro())
+              <span class="status-badge is-active">● Active</span>
+            @elseif(auth()->user()->isExpired())
+              <span class="status-badge is-expired">● Expired</span>
+            @endif
+          @endauth
+        </div>
         <h2>Pro</h2>
         <div class="price"><strong>$49</strong><span>/ month</span></div>
         <div class="billing">Billed monthly · Cancel anytime</div>
         <p class="plan-description">Everything you need to grow and manage your business.</p>
-
-        <a href="{{ route('sign_up', ['plan' => 'pro']) }}" class="pr-btn pr-btn-primary">Upgrade to Pro →</a>
-
+        @auth
+          @if(auth()->user()->isPro())
+            <span class="pr-btn" style="cursor:default;opacity:.7">✓ Active until {{ auth()->user()->plan_ends_at->format('d M Y') }}</span>
+          @elseif(auth()->user()->isExpired())
+            <a href="{{ route('plans.checkout.page') }}" class="pr-btn pr-btn-primary">Renew your plan →</a>
+          @else
+            <a href="{{ route('plans.checkout.page') }}" class="pr-btn pr-btn-primary">Upgrade to Pro →</a>
+          @endif
+        @else
+          <a href="{{ route('sign_up', ['plan' => 'pro']) }}" class="pr-btn pr-btn-primary">Upgrade to Pro →</a>
+        @endauth
+        @auth
+        @if(auth()->user()->isExpired())
+          <p style="color:#b91c1c;font-size:13px;margin:10px 0 0;text-align:center">
+            Your plan expired{{ auth()->user()->plan_ends_at ? ' on '.auth()->user()->plan_ends_at->format('d M Y') : '' }}. Please renew your plan.
+          </p>
+        @endif
+        @endauth
         <hr>
         <div class="feature-title">Everything in one plan</div>
         <ul class="features">
